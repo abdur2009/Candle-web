@@ -1,0 +1,286 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { ShoppingBag, Users, DollarSign, TrendingUp, Package, AlertTriangle } from 'lucide-react';
+
+// Mock data for dashboard (will be replaced with API data)
+const MOCK_DASHBOARD_DATA = {
+  totalSales: 12450.75,
+  totalOrders: 145,
+  totalCustomers: 98,
+  lowStockProducts: 3,
+  recentOrders: [
+    {
+      _id: '1',
+      orderNumber: '10005',
+      date: '2023-09-30T11:10:00',
+      customer: 'Emily Johnson',
+      total: 76.95,
+      status: 'Processing'
+    },
+    {
+      _id: '2',
+      orderNumber: '10004',
+      date: '2023-09-29T16:20:00',
+      customer: 'Michael Smith',
+      total: 54.97,
+      status: 'Processing'
+    },
+    {
+      _id: '3',
+      orderNumber: '10003',
+      date: '2023-09-28T09:45:00',
+      customer: 'Sarah Williams',
+      total: 32.99,
+      status: 'Shipped'
+    },
+    {
+      _id: '4',
+      orderNumber: '10002',
+      date: '2023-09-27T14:15:00',
+      customer: 'David Brown',
+      total: 45.98,
+      status: 'Delivered'
+    },
+    {
+      _id: '5',
+      orderNumber: '10001',
+      date: '2023-09-26T10:30:00',
+      customer: 'Jessica Davis',
+      total: 68.97,
+      status: 'Delivered'
+    }
+  ]
+};
+
+const AdminDashboard: React.FC = () => {
+  const [dashboardData, setDashboardData] = useState(MOCK_DASHBOARD_DATA);
+  const [loading, setLoading] = useState(true);
+  
+  // Fetch dashboard data from API
+  useEffect(() => {
+    // In a real implementation, you would fetch from the backend
+    /* 
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('http://localhost:5000/api/admin/dashboard');
+        setDashboardData(response.data);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+    */
+    
+    // Simulate API call
+    setTimeout(() => {
+      setLoading(false);
+    }, 500);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-neutral-50 py-6 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-3xl font-serif font-bold text-neutral-800">Admin Dashboard</h1>
+          <p className="text-neutral-600">Welcome back! Here's what's happening with your store today.</p>
+        </div>
+        
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="bg-primary-100 p-3 rounded-full mr-4">
+                <DollarSign className="h-6 w-6 text-primary-600" />
+              </div>
+              <div>
+                <p className="text-sm text-neutral-500">Total Sales</p>
+                <p className="text-2xl font-bold">${dashboardData.totalSales.toFixed(2)}</p>
+              </div>
+            </div>
+            <div className="mt-4 flex items-center text-green-600">
+              <TrendingUp className="h-4 w-4 mr-1" />
+              <span className="text-sm">12% from last month</span>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="bg-secondary-100 p-3 rounded-full mr-4">
+                <ShoppingBag className="h-6 w-6 text-secondary-600" />
+              </div>
+              <div>
+                <p className="text-sm text-neutral-500">Total Orders</p>
+                <p className="text-2xl font-bold">{dashboardData.totalOrders}</p>
+              </div>
+            </div>
+            <div className="mt-4 flex items-center text-green-600">
+              <TrendingUp className="h-4 w-4 mr-1" />
+              <span className="text-sm">8% from last month</span>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="bg-accent-100 p-3 rounded-full mr-4">
+                <Users className="h-6 w-6 text-accent-600" />
+              </div>
+              <div>
+                <p className="text-sm text-neutral-500">Total Customers</p>
+                <p className="text-2xl font-bold">{dashboardData.totalCustomers}</p>
+              </div>
+            </div>
+            <div className="mt-4 flex items-center text-green-600">
+              <TrendingUp className="h-4 w-4 mr-1" />
+              <span className="text-sm">5% from last month</span>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="bg-red-100 p-3 rounded-full mr-4">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm text-neutral-500">Low Stock Products</p>
+                <p className="text-2xl font-bold">{dashboardData.lowStockProducts}</p>
+              </div>
+            </div>
+            <div className="mt-4">
+              <Link to="/admin/products" className="text-sm text-primary-600 hover:underline">
+                View products
+              </Link>
+            </div>
+          </div>
+        </div>
+        
+        {/* Recent Orders */}
+        <div className="bg-white rounded-lg shadow-sm mb-8">
+          <div className="p-6 border-b border-neutral-200">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-medium">Recent Orders</h2>
+              <Link to="/admin/orders" className="text-sm text-primary-600 hover:underline">
+                View all
+              </Link>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-neutral-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    Order ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    Customer
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    Total
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-200">
+                {dashboardData.recentOrders.map((order) => (
+                  <tr key={order._id} className="hover:bg-neutral-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
+                      #{order.orderNumber}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                      {new Date(order.date).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
+                      {order.customer}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
+                      ${order.total.toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-block px-2 py-1 text-xs rounded-full ${
+                        order.status === 'Delivered'
+                          ? 'bg-green-100 text-green-800'
+                          : order.status === 'Processing'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                      <button className="text-primary-600 hover:text-primary-900">
+                        View details
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center mb-4">
+              <ShoppingBag className="h-6 w-6 text-primary-600 mr-2" />
+              <h3 className="text-lg font-medium">Manage Products</h3>
+            </div>
+            <p className="text-neutral-600 mb-4">
+              Add, edit, or remove products from your inventory.
+            </p>
+            <Link to="/admin/products" className="btn btn-primary w-full">
+              Go to Products
+            </Link>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center mb-4">
+              <Package className="h-6 w-6 text-primary-600 mr-2" />
+              <h3 className="text-lg font-medium">Manage Orders</h3>
+            </div>
+            <p className="text-neutral-600 mb-4">
+              View and update the status of customer orders.
+            </p>
+            <Link to="/admin/orders" className="btn btn-primary w-full">
+              Go to Orders
+            </Link>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center mb-4">
+              <Users className="h-6 w-6 text-primary-600 mr-2" />
+              <h3 className="text-lg font-medium">Manage Shipments</h3>
+            </div>
+            <p className="text-neutral-600 mb-4">
+              Update shipping status and track deliveries.
+            </p>
+            <Link to="/admin/shipment" className="btn btn-primary w-full">
+              Go to Shipments
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdminDashboard;

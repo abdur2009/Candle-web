@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #ffc107;
+  --secondary: #9c27b0;
+  --accent: #ffeb3b;
+}
+
+body {
+  font-family: 'Raleway', sans-serif;
+  @apply bg-neutral-50 text-neutral-800;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', serif;
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-md transition-all duration-300 font-medium;
+  }
+  
+  .btn-primary {
+    @apply bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary-500 text-white hover:bg-secondary-600 active:bg-secondary-700;
+  }
+  
+  .btn-outline {
+    @apply border border-primary-500 text-primary-500 hover:bg-primary-50;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg;
+  }
+  
+  .input {
+    @apply w-full px-4 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  }
+  
+  .container-custom {
+    @apply container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl;
+  }
+  
+  .nav-link {
+    @apply text-neutral-700 hover:text-primary-500 transition-colors;
+  }
+  
+  .nav-link-active {
+    @apply text-primary-500 font-medium;
+  }
+  
+  .slick-dots li button:before {
+    @apply text-primary-500;
+  }
+  
+  .slick-dots li.slick-active button:before {
+    @apply text-primary-600;
+  }
+}
+
+/* Slider custom styles */
+.slick-slider {
+  @apply mb-8;
+}
+
+.slick-slide img {
+  @apply mx-auto;
+}
+
+/* Animation classes */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.slide-up {
+  animation: slideUp 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .container-custom {
+    @apply px-4;
+  }
+}
