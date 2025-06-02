@@ -29,7 +29,11 @@
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     isAdmin: { type: Boolean, default: false },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    phone: { type: String },
+    address: { type: String },
+    city: { type: String },
+    country: { type: String }
   });
 
   const productSchema = new mongoose.Schema({
@@ -62,12 +66,15 @@
     },
     paymentMethod: { type: String, required: true },
     totalPrice: { type: Number, required: true },
+    taxAmount: { type: Number },
+    taxPercentage: { type: Number },
     status: { 
       type: String, 
       required: true, 
       default: 'Processing',
       enum: ['Processing', 'Shipped', 'Delivered', 'Cancelled']
     },
+    date: { type: Date },
     createdAt: { type: Date, default: Date.now }
   });
 
@@ -77,11 +84,17 @@
       type: String, 
       required: true, 
       default: 'Preparing',
-      enum: ['Preparing', 'In Transit', 'Ready for Pickup', 'Delivered']
+      enum: ['Preparing', 'In Transit', 'Ready for Pickup', 'Delivered', 'Cancelled']
     },
     trackingNumber: { type: String },
     shippingMethod: { type: String, required: true },
     estimatedDelivery: { type: Date },
+    createdAt: { type: Date, default: Date.now }
+  });
+
+  const wishlistSchema = new mongoose.Schema({
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    items: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
     createdAt: { type: Date, default: Date.now }
   });
 
@@ -90,6 +103,7 @@
   const Product = mongoose.model('Product', productSchema);
   const Order = mongoose.model('Order', orderSchema);
   const Shipment = mongoose.model('Shipment', shipmentSchema);
+  const Wishlist = mongoose.model('Wishlist', wishlistSchema);
 
   // Generate JWT token
   const generateToken = (id) => {
@@ -209,6 +223,65 @@
     }
   });
 
+  // Update user profile
+  app.put('/api/users/profile', protect, async (req, res) => {
+    try {
+      const user = await User.findById(req.user._id);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      user.name = req.body.name || user.name;
+      user.phone = req.body.phone || user.phone;
+      user.address = req.body.address || user.address;
+      user.city = req.body.city || user.city;
+      user.country = req.body.country || user.country;
+
+      const updatedUser = await user.save();
+      res.json({
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        isAdmin: updatedUser.isAdmin,
+        phone: updatedUser.phone,
+        address: updatedUser.address,
+        city: updatedUser.city,
+        country: updatedUser.country
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server Error' });
+    }
+  });
+
+  // Update user password
+  app.put('/api/users/password', protect, async (req, res) => {
+    try {
+      const user = await User.findById(req.user._id);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Check current password
+      const isMatch = await bcrypt.compare(req.body.currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(401).json({ message: 'Current password is incorrect' });
+      }
+
+      // Hash new password
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(req.body.newPassword, salt);
+
+      await user.save();
+      res.json({ message: 'Password updated successfully' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server Error' });
+    }
+  });
+
   // Product routes
   app.get('/api/products', async (req, res) => {
     try {
@@ -289,10 +362,28 @@
         items,
         shippingAddress,
         paymentMethod,
-        totalPrice
+        totalPrice,
+        taxAmount,
+        taxPercentage
       } = req.body;
 
-      // Generate order number (starting from 10001)
+      // Check stock availability and update stock
+      for (const item of items) {
+        const product = await Product.findById(item.product);
+        if (!product) {
+          return res.status(404).json({ message: `Product ${item.name} not found` });
+        }
+        if (product.stock < item.quantity) {
+          return res.status(400).json({ 
+            message: `Not enough stock for ${item.name}. Available: ${product.stock}`
+          });
+        }
+        // Reduce stock
+        product.stock -= item.quantity;
+        await product.save();
+      }
+
+      // Generate order number
       const orderCount = await Order.countDocuments();
       const orderNumber = `${10001 + orderCount}`;
 
@@ -302,21 +393,158 @@
         items,
         shippingAddress,
         paymentMethod,
-        totalPrice
+        totalPrice,
+        taxAmount,
+        taxPercentage,
+        date: new Date(),
+        status: 'Processing'
       });
 
       const createdOrder = await order.save();
 
-      // Create shipment for the order
+      // Create shipment
       const shipment = new Shipment({
         order: createdOrder._id,
         shippingMethod: 'Standard Shipping',
-        estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+        estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       });
 
       await shipment.save();
 
-      res.status(201).json(createdOrder);
+      const populatedOrder = await Order.findById(createdOrder._id)
+        .populate('user', 'name email');
+      
+      res.status(201).json(populatedOrder);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server Error' });
+    }
+  });
+
+  // Cancel order
+  app.post('/api/orders/:id/cancel', protect, async (req, res) => {
+    try {
+      const order = await Order.findById(req.params.id);
+      
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      // Check if order can be cancelled
+      if (order.status === 'Delivered' || order.status === 'Shipped') {
+        return res.status(400).json({ 
+          message: 'Cannot cancel order that is already shipped or delivered' 
+        });
+      }
+
+      if (order.status === 'Cancelled') {
+        return res.status(400).json({ message: 'Order is already cancelled' });
+      }
+
+      // Restore stock
+      for (const item of order.items) {
+        const product = await Product.findById(item.product);
+        if (product) {
+          product.stock += item.quantity;
+          await product.save();
+        }
+      }
+
+      // Update order status
+      order.status = 'Cancelled';
+      await order.save();
+
+      // Update shipment status
+      const shipment = await Shipment.findOne({ order: order._id });
+      if (shipment) {
+        shipment.status = 'Cancelled';
+        await shipment.save();
+      }
+
+      res.json(order);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server Error' });
+    }
+  });
+
+  // Get shipment tracking
+  app.get('/api/orders/:id/tracking', protect, async (req, res) => {
+    try {
+      const shipment = await Shipment.findOne({ order: req.params.id });
+      
+      if (!shipment) {
+        return res.status(404).json({ message: 'Shipment not found' });
+      }
+
+      res.json(shipment);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server Error' });
+    }
+  });
+
+  // Add to wishlist
+  app.post('/api/wishlist', protect, async (req, res) => {
+    try {
+      const { productId } = req.body;
+      
+      // Check if product exists
+      const product = await Product.findById(productId);
+      if (!product) {
+        return res.status(404).json({ message: 'Product not found' });
+      }
+
+      // Find or create wishlist
+      let wishlist = await Wishlist.findOne({ user: req.user._id });
+      if (!wishlist) {
+        wishlist = new Wishlist({
+          user: req.user._id,
+          items: []
+        });
+      }
+
+      // Check if product is already in wishlist
+      if (!wishlist.items.includes(productId)) {
+        wishlist.items.push(productId);
+        await wishlist.save();
+      }
+
+      res.json(wishlist);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server Error' });
+    }
+  });
+
+  // Get wishlist
+  app.get('/api/wishlist', protect, async (req, res) => {
+    try {
+      const wishlist = await Wishlist.findOne({ user: req.user._id })
+        .populate('items');
+      
+      res.json(wishlist?.items || []);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server Error' });
+    }
+  });
+
+  // Remove from wishlist
+  app.delete('/api/wishlist/:productId', protect, async (req, res) => {
+    try {
+      const wishlist = await Wishlist.findOne({ user: req.user._id });
+      
+      if (!wishlist) {
+        return res.status(404).json({ message: 'Wishlist not found' });
+      }
+
+      wishlist.items = wishlist.items.filter(
+        item => item.toString() !== req.params.productId
+      );
+      await wishlist.save();
+
+      res.json({ message: 'Item removed from wishlist' });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Server Error' });
@@ -325,8 +553,22 @@
 
   app.get('/api/orders', protect, async (req, res) => {
     try {
-      const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
-      res.json(orders);
+      const orders = await Order.find({ user: req.user._id })
+        .populate('user', 'name email')
+        .sort({ createdAt: -1 });
+      
+      // Transform the data to match the expected format
+      const transformedOrders = orders.map(order => ({
+        ...order.toObject(),
+        date: order.date || order.createdAt, // Use date if available, fallback to createdAt
+        customer: {
+          _id: order.user._id,
+          name: order.user.name,
+          email: order.user.email
+        }
+      }));
+      
+      res.json(transformedOrders);
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Server Error' });
@@ -335,10 +577,20 @@
 
   app.get('/api/orders/:id', protect, async (req, res) => {
     try {
-      const order = await Order.findById(req.params.id);
+      const order = await Order.findById(req.params.id).populate('user', 'name email');
       
-      if (order && (order.user.toString() === req.user._id.toString() || req.user.isAdmin)) {
-        res.json(order);
+      if (order && (order.user._id.toString() === req.user._id.toString() || req.user.isAdmin)) {
+        // Transform the data to match the expected format
+        const transformedOrder = {
+          ...order.toObject(),
+          date: order.date || order.createdAt,
+          customer: {
+            _id: order.user._id,
+            name: order.user.name,
+            email: order.user.email
+          }
+        };
+        res.json(transformedOrder);
       } else if (!order) {
         res.status(404).json({ message: 'Order not found' });
       } else {
@@ -353,8 +605,22 @@
   // Admin order routes
   app.get('/api/admin/orders', protect, admin, async (req, res) => {
     try {
-      const orders = await Order.find({}).populate('user', 'name email').sort({ createdAt: -1 });
-      res.json(orders);
+      const orders = await Order.find({})
+        .populate('user', 'name email')
+        .sort({ createdAt: -1 });
+      
+      // Transform the data to match the expected format
+      const transformedOrders = orders.map(order => ({
+        ...order.toObject(),
+        date: order.date || order.createdAt,
+        customer: {
+          _id: order.user._id,
+          name: order.user.name,
+          email: order.user.email
+        }
+      }));
+      
+      res.json(transformedOrders);
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Server Error' });

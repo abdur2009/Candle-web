@@ -1,12 +1,16 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 
 interface User {
   _id: string;
   name: string;
   email: string;
   isAdmin: boolean;
+  phone?: string;
+  address?: string;
+  city?: string;
+  country?: string;
 }
 
 interface AuthContextType {
@@ -18,6 +22,7 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  updateUser: (userData: User) => void;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -29,6 +34,7 @@ export const AuthContext = createContext<AuthContextType>({
   logout: () => {},
   isAuthenticated: false,
   isAdmin: false,
+  updateUser: () => {},
 });
 
 interface AuthProviderProps {
@@ -70,7 +76,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         password,
       });
       
-      const { token: newToken, user: userData } = res.data;
+      const { token: newToken, ...userData } = res.data;
       
       // Save token to localStorage
       localStorage.setItem('token', newToken);
@@ -97,7 +103,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         password,
       });
       
-      const { token: newToken, user: userData } = res.data;
+      const { token: newToken, ...userData } = res.data;
       
       // Save token to localStorage
       localStorage.setItem('token', newToken);
@@ -121,7 +127,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setToken(null);
     setUser(null);
     delete axios.defaults.headers.common['Authorization'];
-    toast.info('Logged out successfully');
+    toast.success('Logged out successfully');
+  };
+
+  // Update user function
+  const updateUser = (userData: User) => {
+    setUser(userData);
   };
 
   // Computed properties
@@ -137,6 +148,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     isAuthenticated,
     isAdmin,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

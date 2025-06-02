@@ -1,75 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { Search, TrendingUp, Truck, Package, Map, CheckCircle } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { Search, TrendingUp, Truck, Package, Map, CheckCircle, X } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import axios from 'axios';
 
-// Mock data for shipments (will be replaced with API data)
-const MOCK_SHIPMENTS = [
-  {
-    _id: '1',
-    orderNumber: '10002',
-    customer: 'David Brown',
-    date: '2023-06-22T14:15:00',
-    items: 1,
-    status: 'In Transit',
-    trackingNumber: 'TRK123456789',
-    shippingMethod: 'Standard Shipping',
-    estimatedDelivery: '2023-06-27T00:00:00'
-  },
-  {
-    _id: '2',
-    orderNumber: '10003',
-    customer: 'Sarah Williams',
-    date: '2023-07-08T09:45:00',
-    items: 2,
-    status: 'Preparing',
-    trackingNumber: null,
-    shippingMethod: 'Express Shipping',
-    estimatedDelivery: '2023-07-11T00:00:00'
-  },
-  {
-    _id: '3',
-    orderNumber: '10004',
-    customer: 'Michael Smith',
-    date: '2023-08-17T16:20:00',
-    items: 2,
-    status: 'Preparing',
-    trackingNumber: null,
-    shippingMethod: 'Standard Shipping',
-    estimatedDelivery: '2023-08-24T00:00:00'
-  },
-  {
-    _id: '4',
-    orderNumber: '10005',
-    customer: 'Emily Johnson',
-    date: '2023-09-30T11:10:00',
-    items: 3,
-    status: 'Ready for Pickup',
-    trackingNumber: 'TRK987654321',
-    shippingMethod: 'Express Shipping',
-    estimatedDelivery: '2023-10-03T00:00:00'
-  }
-];
+interface OrderDetails {
+  _id: string;
+  orderNumber: string;
+  user: {
+    name: string;
+    email: string;
+  };
+  items: Array<{
+    _id: string;
+    name: string;
+    quantity: number;
+  }>;
+}
 
 interface Shipment {
   _id: string;
-  orderNumber: string;
-  customer: string;
-  date: string;
-  items: number;
+  order: OrderDetails;
   status: string;
   trackingNumber: string | null;
   shippingMethod: string;
   estimatedDelivery: string;
+  createdAt: string;
 }
 
 const AdminShipment: React.FC = () => {
-  const [shipments, setShipments] = useState<Shipment[]>(MOCK_SHIPMENTS);
+  const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [filteredShipments, setFilteredShipments] = useState<Shipment[]>(shipments);
+  const [filteredShipments, setFilteredShipments] = useState<Shipment[]>([]);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [currentShipment, setCurrentShipment] = useState<Shipment | null>(null);
+  const [updating, setUpdating] = useState(false);
   
   const [formData, setFormData] = useState({
     status: '',
@@ -79,30 +45,27 @@ const AdminShipment: React.FC = () => {
   });
   
   // Fetch shipments from API
-  useEffect(() => {
-    // In a real implementation, you would fetch from the backend
-    /* 
     const fetchShipments = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:5000/api/admin/shipments');
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:5000/api/admin/shipments', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
         setShipments(response.data);
         setFilteredShipments(response.data);
-      } catch (error) {
+    } catch (error: any) {
         console.error('Error fetching shipments:', error);
+      toast.error(error.response?.data?.message || 'Failed to fetch shipments');
       } finally {
         setLoading(false);
       }
     };
 
+  useEffect(() => {
     fetchShipments();
-    */
-    
-    // Simulate API call
-    setTimeout(() => {
-      setFilteredShipments(shipments);
-      setLoading(false);
-    }, 500);
   }, []);
   
   // Filter shipments based on search term and status
@@ -118,8 +81,8 @@ const AdminShipment: React.FC = () => {
     if (searchTerm) {
       filtered = filtered.filter(
         shipment => 
-          shipment.orderNumber.includes(searchTerm) ||
-          shipment.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          shipment.order.orderNumber.includes(searchTerm) ||
+          shipment.order.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (shipment.trackingNumber && shipment.trackingNumber.includes(searchTerm))
       );
     }
@@ -140,7 +103,7 @@ const AdminShipment: React.FC = () => {
     setFormData({
       status: shipment.status,
       trackingNumber: shipment.trackingNumber || '',
-      estimatedDelivery: shipment.estimatedDelivery.split('T')[0], // Format date for input
+      estimatedDelivery: new Date(shipment.estimatedDelivery).toISOString().split('T')[0],
       shippingMethod: shipment.shippingMethod
     });
     setShowUpdateModal(true);
@@ -149,6 +112,7 @@ const AdminShipment: React.FC = () => {
   const closeUpdateModal = () => {
     setShowUpdateModal(false);
     setCurrentShipment(null);
+    setUpdating(false);
   };
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -159,7 +123,7 @@ const AdminShipment: React.FC = () => {
     }));
   };
   
-  const handleUpdateShipment = (e: React.FormEvent) => {
+  const handleUpdateShipment = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!currentShipment) return;
@@ -176,47 +140,38 @@ const AdminShipment: React.FC = () => {
       return;
     }
     
-    // Update shipment
-    const updatedShipment: Shipment = {
-      ...currentShipment,
-      status: formData.status,
-      trackingNumber: formData.trackingNumber || null,
-      estimatedDelivery: `${formData.estimatedDelivery}T00:00:00`,
-      shippingMethod: formData.shippingMethod
-    };
-    
-    // In a real implementation, you would send data to your backend
-    /* 
-    const updateShipment = async () => {
-      try {
-        const response = await axios.put(`http://localhost:5000/api/admin/shipments/${currentShipment._id}`, {
+    try {
+      setUpdating(true);
+      const token = localStorage.getItem('token');
+      await axios.put(
+        `http://localhost:5000/api/admin/shipments/${currentShipment._id}`,
+        {
           status: formData.status,
           trackingNumber: formData.trackingNumber || null,
-          estimatedDelivery: `${formData.estimatedDelivery}T00:00:00`,
+          estimatedDelivery: `${formData.estimatedDelivery}T00:00:00.000Z`,
           shippingMethod: formData.shippingMethod
-        });
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
         
-        setShipments(shipments.map(s => s._id === currentShipment._id ? response.data : s));
+      await fetchShipments();
         toast.success('Shipment updated successfully!');
         closeUpdateModal();
-      } catch (error) {
+    } catch (error: any) {
         console.error('Error updating shipment:', error);
-        toast.error('Failed to update shipment');
-      }
-    };
-
-    updateShipment();
-    */
-    
-    // For demo purposes, we'll just update the local state
-    setShipments(shipments.map(s => s._id === currentShipment._id ? updatedShipment : s));
-    toast.success('Shipment updated successfully!');
-    closeUpdateModal();
+      toast.error(error.response?.data?.message || 'Failed to update shipment');
+    } finally {
+      setUpdating(false);
+    }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
       </div>
     );
@@ -353,13 +308,13 @@ const AdminShipment: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-neutral-900">
-                          #{shipment.orderNumber}
+                          #{shipment.order.orderNumber}
                         </div>
                         <div className="text-sm text-neutral-500">
-                          {shipment.customer}
+                          {shipment.order.user.name}
                         </div>
                         <div className="text-sm text-neutral-500">
-                          {new Date(shipment.date).toLocaleDateString()}
+                          {new Date(shipment.createdAt).toLocaleDateString()}
                         </div>
                       </div>
                     </td>
@@ -424,7 +379,7 @@ const AdminShipment: React.FC = () => {
                 <div className="mb-4">
                   <h3 className="text-lg font-medium text-neutral-900">Update Shipment</h3>
                   <p className="text-sm text-neutral-500">
-                    Order #{currentShipment.orderNumber} - {currentShipment.customer}
+                    Order #{currentShipment.order.orderNumber} - {currentShipment.order.user.name}
                   </p>
                 </div>
                 
@@ -501,13 +456,15 @@ const AdminShipment: React.FC = () => {
                     <button
                       type="submit"
                       className="btn btn-primary"
+                      disabled={updating}
                     >
-                      Update Shipment
+                      {updating ? 'Updating...' : 'Update Shipment'}
                     </button>
                     <button
                       type="button"
                       className="btn btn-outline mt-3 sm:mt-0"
                       onClick={closeUpdateModal}
+                      disabled={updating}
                     >
                       Cancel
                     </button>

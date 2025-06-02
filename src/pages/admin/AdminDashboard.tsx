@@ -1,89 +1,91 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, Users, DollarSign, TrendingUp, Package, AlertTriangle } from 'lucide-react';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
-// Mock data for dashboard (will be replaced with API data)
-const MOCK_DASHBOARD_DATA = {
-  totalSales: 12450.75,
-  totalOrders: 145,
-  totalCustomers: 98,
-  lowStockProducts: 3,
-  recentOrders: [
-    {
-      _id: '1',
-      orderNumber: '10005',
-      date: '2023-09-30T11:10:00',
-      customer: 'Emily Johnson',
-      total: 76.95,
-      status: 'Processing'
-    },
-    {
-      _id: '2',
-      orderNumber: '10004',
-      date: '2023-09-29T16:20:00',
-      customer: 'Michael Smith',
-      total: 54.97,
-      status: 'Processing'
-    },
-    {
-      _id: '3',
-      orderNumber: '10003',
-      date: '2023-09-28T09:45:00',
-      customer: 'Sarah Williams',
-      total: 32.99,
-      status: 'Shipped'
-    },
-    {
-      _id: '4',
-      orderNumber: '10002',
-      date: '2023-09-27T14:15:00',
-      customer: 'David Brown',
-      total: 45.98,
-      status: 'Delivered'
-    },
-    {
-      _id: '5',
-      orderNumber: '10001',
-      date: '2023-09-26T10:30:00',
-      customer: 'Jessica Davis',
-      total: 68.97,
-      status: 'Delivered'
-    }
-  ]
-};
+interface Order {
+  _id: string;
+  orderNumber: string;
+  date: string;
+  user: {
+    name: string;
+  };
+  total: number;
+  status: string;
+}
+
+interface DashboardData {
+  totalSales: number;
+  totalOrders: number;
+  totalCustomers: number;
+  lowStockProducts: number;
+  recentOrders: Order[];
+  monthlyGrowth: {
+    sales: number;
+    orders: number;
+    customers: number;
+  };
+}
 
 const AdminDashboard: React.FC = () => {
-  const [dashboardData, setDashboardData] = useState(MOCK_DASHBOARD_DATA);
+  const [dashboardData, setDashboardData] = useState<DashboardData>({
+    totalSales: 0,
+    totalOrders: 0,
+    totalCustomers: 0,
+    lowStockProducts: 0,
+    recentOrders: [],
+    monthlyGrowth: {
+      sales: 0,
+      orders: 0,
+      customers: 0
+    }
+  });
   const [loading, setLoading] = useState(true);
   
   // Fetch dashboard data from API
-  useEffect(() => {
-    // In a real implementation, you would fetch from the backend
-    /* 
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get('http://localhost:5000/api/admin/dashboard');
-        setDashboardData(response.data);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:5000/api/admin/dashboard', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
 
-    fetchDashboardData();
-    */
-    
-    // Simulate API call
-    setTimeout(() => {
+      // Ensure monthlyGrowth has default values if not provided
+      const data = {
+        ...response.data,
+        monthlyGrowth: {
+          sales: response.data.monthlyGrowth?.sales || 0,
+          orders: response.data.monthlyGrowth?.orders || 0,
+          customers: response.data.monthlyGrowth?.customers || 0
+        }
+      };
+      
+      setDashboardData(data);
+    } catch (error: any) {
+      console.error('Error fetching dashboard data:', error);
+      toast.error(error.response?.data?.message || 'Failed to fetch dashboard data');
+    } finally {
       setLoading(false);
-    }, 500);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+
+    // Set up polling for real-time updates every 30 seconds
+    const interval = setInterval(fetchDashboardData, 30000);
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
       </div>
     );
@@ -106,12 +108,12 @@ const AdminDashboard: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-neutral-500">Total Sales</p>
-                <p className="text-2xl font-bold">${dashboardData.totalSales.toFixed(2)}</p>
+                <p className="text-2xl font-bold">Rs. {dashboardData.totalSales.toLocaleString()}</p>
               </div>
             </div>
             <div className="mt-4 flex items-center text-green-600">
               <TrendingUp className="h-4 w-4 mr-1" />
-              <span className="text-sm">12% from last month</span>
+              <span className="text-sm">{dashboardData.monthlyGrowth?.sales || 0}% from last month</span>
             </div>
           </div>
           
@@ -127,7 +129,7 @@ const AdminDashboard: React.FC = () => {
             </div>
             <div className="mt-4 flex items-center text-green-600">
               <TrendingUp className="h-4 w-4 mr-1" />
-              <span className="text-sm">8% from last month</span>
+              <span className="text-sm">{dashboardData.monthlyGrowth?.orders || 0}% from last month</span>
             </div>
           </div>
           
@@ -143,7 +145,7 @@ const AdminDashboard: React.FC = () => {
             </div>
             <div className="mt-4 flex items-center text-green-600">
               <TrendingUp className="h-4 w-4 mr-1" />
-              <span className="text-sm">5% from last month</span>
+              <span className="text-sm">{dashboardData.monthlyGrowth?.customers || 0}% from last month</span>
             </div>
           </div>
           
@@ -200,19 +202,19 @@ const AdminDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-200">
-                {dashboardData.recentOrders.map((order) => (
+                {(dashboardData.recentOrders || []).map((order) => (
                   <tr key={order._id} className="hover:bg-neutral-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                      #{order.orderNumber}
+                      #{order.orderNumber || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                      {new Date(order.date).toLocaleDateString()}
+                      {order.date ? new Date(order.date).toLocaleDateString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                      {order.customer}
+                      {order.user?.name || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                      ${order.total.toFixed(2)}
+                      Rs. {(order.total || 0).toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-block px-2 py-1 text-xs rounded-full ${
@@ -220,21 +222,32 @@ const AdminDashboard: React.FC = () => {
                           ? 'bg-green-100 text-green-800'
                           : order.status === 'Processing'
                           ? 'bg-blue-100 text-blue-800'
-                          : 'bg-yellow-100 text-yellow-800'
+                          : order.status === 'Shipped'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
                       }`}>
-                        {order.status}
+                        {order.status || 'Unknown'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <button className="text-primary-600 hover:text-primary-900">
+                      <Link 
+                        to={`/admin/orders/${order._id}`}
+                        className="text-primary-600 hover:text-primary-900"
+                      >
                         View details
-                      </button>
+                      </Link>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          
+          {(!dashboardData.recentOrders || dashboardData.recentOrders.length === 0) && (
+            <div className="text-center py-6">
+              <p className="text-neutral-600">No recent orders found</p>
+            </div>
+          )}
         </div>
         
         {/* Quick Actions */}

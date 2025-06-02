@@ -1,178 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ChevronDown, ChevronUp, Eye, Package } from 'lucide-react';
 import { toast } from 'react-toastify';
-
-// Mock data for orders (will be replaced with API data)
-const MOCK_ORDERS = [
-  {
-    _id: '1',
-    orderNumber: '10001',
-    date: '2023-05-15T10:30:00',
-    customer: {
-      _id: '101',
-      name: 'Jessica Davis',
-      email: 'jessica@example.com'
-    },
-    items: [
-      {
-        _id: '1',
-        name: 'Lavender Dreams',
-        price: 24.99,
-        quantity: 2,
-        image: 'https://images.pexels.com/photos/4498184/pexels-photo-4498184.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-      },
-      {
-        _id: '2',
-        name: 'Vanilla Bliss',
-        price: 19.99,
-        quantity: 1,
-        image: 'https://images.pexels.com/photos/3270223/pexels-photo-3270223.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-      }
-    ],
-    total: 68.97,
-    status: 'Delivered',
-    shippingAddress: {
-      address: '123 Main St',
-      city: 'Anytown',
-      postalCode: '12345',
-      country: 'United States'
-    },
-    paymentMethod: 'creditCard'
-  },
-  {
-    _id: '2',
-    orderNumber: '10002',
-    date: '2023-06-22T14:15:00',
-    customer: {
-      _id: '102',
-      name: 'David Brown',
-      email: 'david@example.com'
-    },
-    items: [
-      {
-        _id: '3',
-        name: 'Ocean Breeze',
-        price: 22.99,
-        quantity: 2,
-        image: 'https://images.pexels.com/photos/7783699/pexels-photo-7783699.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-      }
-    ],
-    total: 45.98,
-    status: 'Shipped',
-    shippingAddress: {
-      address: '456 Oak Ave',
-      city: 'Somewhere',
-      postalCode: '67890',
-      country: 'United States'
-    },
-    paymentMethod: 'easyPaisa'
-  },
-  {
-    _id: '3',
-    orderNumber: '10003',
-    date: '2023-07-08T09:45:00',
-    customer: {
-      _id: '103',
-      name: 'Sarah Williams',
-      email: 'sarah@example.com'
-    },
-    items: [
-      {
-        _id: '4',
-        name: 'Cinnamon Spice',
-        price: 21.99,
-        quantity: 1,
-        image: 'https://images.pexels.com/photos/11793440/pexels-photo-11793440.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-      },
-      {
-        _id: '5',
-        name: 'Rose Garden',
-        price: 26.99,
-        quantity: 1,
-        image: 'https://images.pexels.com/photos/9987224/pexels-photo-9987224.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-      }
-    ],
-    total: 48.98,
-    status: 'Processing',
-    shippingAddress: {
-      address: '789 Pine Rd',
-      city: 'Elsewhere',
-      postalCode: '54321',
-      country: 'United States'
-    },
-    paymentMethod: 'jazzCash'
-  },
-  {
-    _id: '4',
-    orderNumber: '10004',
-    date: '2023-08-17T16:20:00',
-    customer: {
-      _id: '104',
-      name: 'Michael Smith',
-      email: 'michael@example.com'
-    },
-    items: [
-      {
-        _id: '6',
-        name: 'Eucalyptus Mint',
-        price: 23.99,
-        quantity: 1,
-        image: 'https://images.pexels.com/photos/6869653/pexels-photo-6869653.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-      },
-      {
-        _id: '7',
-        name: 'Amber & Sandalwood',
-        price: 28.99,
-        quantity: 1,
-        image: 'https://images.pexels.com/photos/4207799/pexels-photo-4207799.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-      }
-    ],
-    total: 52.98,
-    status: 'Processing',
-    shippingAddress: {
-      address: '321 Maple Dr',
-      city: 'Nowhere',
-      postalCode: '09876',
-      country: 'United States'
-    },
-    paymentMethod: 'creditCard'
-  },
-  {
-    _id: '5',
-    orderNumber: '10005',
-    date: '2023-09-30T11:10:00',
-    customer: {
-      _id: '105',
-      name: 'Emily Johnson',
-      email: 'emily@example.com'
-    },
-    items: [
-      {
-        _id: '8',
-        name: 'Citrus Sunshine',
-        price: 20.99,
-        quantity: 2,
-        image: 'https://images.pexels.com/photos/6443303/pexels-photo-6443303.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-      },
-      {
-        _id: '1',
-        name: 'Lavender Dreams',
-        price: 24.99,
-        quantity: 1,
-        image: 'https://images.pexels.com/photos/4498184/pexels-photo-4498184.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-      }
-    ],
-    total: 66.97,
-    status: 'Processing',
-    shippingAddress: {
-      address: '654 Cedar Ln',
-      city: 'Someplace',
-      postalCode: '13579',
-      country: 'United States'
-    },
-    paymentMethod: 'creditCard'
-  }
-];
+import axios from 'axios';
 
 interface Order {
   _id: string;
@@ -199,131 +28,108 @@ interface Order {
     country: string;
   };
   paymentMethod: string;
+  totalPrice?: number;
+  taxAmount?: number;
+  taxPercentage?: number;
 }
 
 const AdminOrders: React.FC = () => {
-  const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
-  const [filteredOrders, setFilteredOrders] = useState<Order[]>(orders);
+  const [expandedOrders, setExpandedOrders] = useState<string[]>([]);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
-  const [editStatus, setEditStatus] = useState('');
+  const [newStatus, setNewStatus] = useState('');
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   
   // Fetch orders from API
   useEffect(() => {
-    // In a real implementation, you would fetch from the backend
-    /* 
     const fetchOrders = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:5000/api/admin/orders');
-        setOrders(response.data);
-        setFilteredOrders(response.data);
+        const token = localStorage.getItem('token');
+        const response = await axios.get<Order[]>('http://localhost:5000/api/admin/orders', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        // Transform orders to handle both total and totalPrice fields
+        const transformedOrders = response.data.map(order => ({
+          ...order,
+          total: order.total || order.totalPrice || 0,
+          customer: order.customer || {
+            _id: '',
+            name: 'Unknown Customer',
+            email: ''
+          }
+        }));
+        
+        setOrders(transformedOrders);
+        setFilteredOrders(transformedOrders);
       } catch (error) {
         console.error('Error fetching orders:', error);
+        toast.error('Failed to fetch orders');
       } finally {
         setLoading(false);
       }
     };
 
     fetchOrders();
-    */
-    
-    // Simulate API call
-    setTimeout(() => {
-      setFilteredOrders(orders);
-      setLoading(false);
-    }, 500);
   }, []);
   
   // Filter orders based on search term and status
   useEffect(() => {
     let filtered = orders;
     
-    // Filter by status
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(order => order.status === statusFilter);
-    }
-    
-    // Filter by search term (order number or customer name)
     if (searchTerm) {
       filtered = filtered.filter(
         order => 
           order.orderNumber.includes(searchTerm) ||
-          order.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          order.customer.email.toLowerCase().includes(searchTerm.toLowerCase())
+          (order.customer?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (order.customer?.email || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
+    }
+    
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(order => order.status.toLowerCase() === statusFilter);
     }
     
     setFilteredOrders(filtered);
   }, [searchTerm, statusFilter, orders]);
   
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-  
-  const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setStatusFilter(e.target.value);
-  };
-  
-  const toggleOrderExpand = (orderId: string) => {
-    setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
-  };
-  
-  const openOrderModal = (order: Order) => {
-    setCurrentOrder(order);
-    setEditStatus(order.status);
-    setShowOrderModal(true);
-  };
-  
-  const closeOrderModal = () => {
-    setShowOrderModal(false);
-    setCurrentOrder(null);
-  };
-  
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setEditStatus(e.target.value);
+    setNewStatus(e.target.value);
   };
-  
-  const updateOrderStatus = () => {
-    if (!currentOrder) return;
-    
-    // In a real implementation, you would send data to your backend
-    /* 
-    const updateStatus = async () => {
-      try {
-        await axios.put(`http://localhost:5000/api/admin/orders/${currentOrder._id}`, {
-          status: editStatus
-        });
-        
-        // Update local state
-        const updatedOrders = orders.map(order => 
-          order._id === currentOrder._id ? { ...order, status: editStatus } : order
-        );
-        setOrders(updatedOrders);
-        
-        toast.success('Order status updated successfully!');
-        closeOrderModal();
+
+  const updateOrderStatus = async () => {
+    if (!currentOrder || !newStatus) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.put(
+        `http://localhost:5000/api/admin/orders/${currentOrder._id}`,
+        { status: newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      // Update orders in state
+      setOrders(orders.map(order => 
+        order._id === currentOrder._id ? { ...order, status: newStatus } : order
+      ));
+
+      toast.success('Order status updated successfully');
+      setShowOrderModal(false);
       } catch (error) {
         console.error('Error updating order status:', error);
         toast.error('Failed to update order status');
       }
-    };
-
-    updateStatus();
-    */
-    
-    // For demo purposes, we'll just update the local state
-    const updatedOrders = orders.map(order => 
-      order._id === currentOrder._id ? { ...order, status: editStatus } : order
-    );
-    setOrders(updatedOrders);
-    
-    toast.success('Order status updated successfully!');
-    closeOrderModal();
   };
 
   if (loading) {
@@ -353,7 +159,7 @@ const AdminOrders: React.FC = () => {
                 type="text"
                 placeholder="Search by order number or customer"
                 value={searchTerm}
-                onChange={handleSearch}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="input pl-10"
               />
             </div>
@@ -361,7 +167,7 @@ const AdminOrders: React.FC = () => {
             <div>
               <select
                 value={statusFilter}
-                onChange={handleStatusFilterChange}
+                onChange={(e) => setStatusFilter(e.target.value)}
                 className="input"
               >
                 <option value="all">All Statuses</option>
@@ -394,11 +200,11 @@ const AdminOrders: React.FC = () => {
                 <div key={order._id} className="p-4">
                   <div 
                     className="flex flex-col md:flex-row md:items-center md:justify-between cursor-pointer"
-                    onClick={() => toggleOrderExpand(order._id)}
+                    onClick={() => setExpandedOrders(expandedOrders.includes(order._id) ? expandedOrders.filter(id => id !== order._id) : [...expandedOrders, order._id])}
                   >
                     <div className="flex items-center">
                       <div className="mr-4">
-                        {expandedOrderId === order._id ? (
+                        {expandedOrders.includes(order._id) ? (
                           <ChevronUp className="h-5 w-5 text-neutral-500" />
                         ) : (
                           <ChevronDown className="h-5 w-5 text-neutral-500" />
@@ -420,7 +226,7 @@ const AdminOrders: React.FC = () => {
                           </span>
                         </div>
                         <p className="text-sm text-neutral-500">
-                          {new Date(order.date).toLocaleDateString()} · {order.customer.name}
+                          {new Date(order.date).toLocaleDateString()} · {order.customer?.name || 'Unknown Customer'}
                         </p>
                       </div>
                     </div>
@@ -428,12 +234,14 @@ const AdminOrders: React.FC = () => {
                     <div className="mt-4 md:mt-0 flex items-center">
                       <div className="mr-6">
                         <p className="text-sm text-neutral-500">Total</p>
-                        <p className="font-medium">${order.total.toFixed(2)}</p>
+                        <p className="font-medium">Rs. {(order.total || 0).toLocaleString()}</p>
                       </div>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          openOrderModal(order);
+                          setCurrentOrder(order);
+                          setNewStatus(order.status);
+                          setShowOrderModal(true);
                         }}
                         className="btn btn-outline flex items-center"
                       >
@@ -444,13 +252,13 @@ const AdminOrders: React.FC = () => {
                   </div>
                   
                   {/* Expanded Order Details */}
-                  {expandedOrderId === order._id && (
+                  {expandedOrders.includes(order._id) && (
                     <div className="mt-4 ml-9 border-t border-neutral-200 pt-4 animate-fade-in">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                           <h4 className="text-sm font-medium text-neutral-500 mb-2">Order Items</h4>
                           <div className="space-y-3">
-                            {order.items.map((item) => (
+                            {order.items?.map((item) => (
                               <div key={item._id} className="flex items-center">
                                 <img
                                   src={item.image}
@@ -460,7 +268,7 @@ const AdminOrders: React.FC = () => {
                                 <div>
                                   <p className="font-medium">{item.name}</p>
                                   <p className="text-sm text-neutral-600">
-                                    ${item.price.toFixed(2)} x {item.quantity}
+                                    Rs. {(item.price || 0).toLocaleString()} x {item.quantity || 0}
                                   </p>
                                 </div>
                               </div>
@@ -471,9 +279,9 @@ const AdminOrders: React.FC = () => {
                         <div>
                           <div className="mb-4">
                             <h4 className="text-sm font-medium text-neutral-500 mb-2">Shipping Address</h4>
-                            <p>{order.shippingAddress.address}</p>
-                            <p>{order.shippingAddress.city}, {order.shippingAddress.postalCode}</p>
-                            <p>{order.shippingAddress.country}</p>
+                            <p>{order.shippingAddress?.address || 'No address provided'}</p>
+                            <p>{order.shippingAddress?.city || 'No city'}, {order.shippingAddress?.postalCode || 'No postal code'}</p>
+                            <p>{order.shippingAddress?.country || 'No country'}</p>
                           </div>
                           
                           <div>
@@ -495,7 +303,7 @@ const AdminOrders: React.FC = () => {
       {showOrderModal && currentOrder && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
-            <div className="fixed inset-0 bg-neutral-900 bg-opacity-75 transition-opacity" onClick={closeOrderModal}></div>
+            <div className="fixed inset-0 bg-neutral-900 bg-opacity-75 transition-opacity" onClick={() => setShowOrderModal(false)}></div>
             
             <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
@@ -521,14 +329,14 @@ const AdminOrders: React.FC = () => {
                 
                 <div className="mb-4">
                   <p className="text-sm text-neutral-500">Customer</p>
-                  <p>{currentOrder.customer.name}</p>
-                  <p className="text-sm">{currentOrder.customer.email}</p>
+                  <p>{currentOrder.customer?.name || 'Unknown Customer'}</p>
+                  <p className="text-sm">{currentOrder.customer?.email || 'No email provided'}</p>
                 </div>
                 
                 <div className="mb-4">
                   <p className="text-sm text-neutral-500">Items</p>
                   <div className="mt-2 space-y-3">
-                    {currentOrder.items.map((item) => (
+                    {currentOrder.items?.map((item) => (
                       <div key={item._id} className="flex items-center">
                         <img
                           src={item.image}
@@ -538,11 +346,11 @@ const AdminOrders: React.FC = () => {
                         <div className="flex-grow">
                           <p className="font-medium">{item.name}</p>
                           <p className="text-sm text-neutral-600">
-                            ${item.price.toFixed(2)} x {item.quantity}
+                            Rs. {(item.price || 0).toLocaleString()} x {item.quantity || 0}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                          <p className="font-medium">Rs. {((item.price || 0) * (item.quantity || 0)).toLocaleString()}</p>
                         </div>
                       </div>
                     ))}
@@ -551,9 +359,9 @@ const AdminOrders: React.FC = () => {
                 
                 <div className="mb-4">
                   <p className="text-sm text-neutral-500">Shipping Address</p>
-                  <p>{currentOrder.shippingAddress.address}</p>
-                  <p>{currentOrder.shippingAddress.city}, {currentOrder.shippingAddress.postalCode}</p>
-                  <p>{currentOrder.shippingAddress.country}</p>
+                  <p>{currentOrder.shippingAddress?.address || 'No address provided'}</p>
+                  <p>{currentOrder.shippingAddress?.city || 'No city'}, {currentOrder.shippingAddress?.postalCode || 'No postal code'}</p>
+                  <p>{currentOrder.shippingAddress?.country || 'No country'}</p>
                 </div>
                 
                 <div className="mb-4">
@@ -561,10 +369,20 @@ const AdminOrders: React.FC = () => {
                   <p className="capitalize">{currentOrder.paymentMethod}</p>
                 </div>
                 
-                <div className="mb-4 pt-3 border-t border-neutral-200">
+                <div className="space-y-2 pt-3 border-t border-neutral-200">
                   <div className="flex justify-between">
-                    <p className="font-medium">Total</p>
-                    <p className="font-bold">${currentOrder.total.toFixed(2)}</p>
+                    <p className="text-sm text-neutral-500">Subtotal</p>
+                    <p>Rs. {(currentOrder.total || 0).toLocaleString()}</p>
+                  </div>
+                  {currentOrder.taxAmount && currentOrder.taxPercentage && (
+                    <div className="flex justify-between">
+                      <p className="text-sm text-neutral-500">Tax ({currentOrder.taxPercentage}%)</p>
+                      <p>Rs. {currentOrder.taxAmount.toLocaleString()}</p>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-medium">
+                    <p>Total (including tax)</p>
+                    <p>Rs. {((currentOrder.total || 0) + (currentOrder.taxAmount || 0)).toLocaleString()}</p>
                   </div>
                 </div>
                 
@@ -574,7 +392,7 @@ const AdminOrders: React.FC = () => {
                   </label>
                   <select
                     id="status"
-                    value={editStatus}
+                    value={newStatus}
                     onChange={handleStatusChange}
                     className="input"
                   >
@@ -597,7 +415,7 @@ const AdminOrders: React.FC = () => {
                 <button
                   type="button"
                   className="mt-3 w-full inline-flex justify-center rounded-md border border-neutral-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                  onClick={closeOrderModal}
+                  onClick={() => setShowOrderModal(false)}
                 >
                   Close
                 </button>

@@ -52,7 +52,7 @@ const Cart: React.FC = () => {
                           <div>
                             <h3 className="text-lg font-medium mb-1">{item.name}</h3>
                             <p className="text-primary-600 font-bold mb-3">
-                              ${item.price.toFixed(2)}
+                              Rs. {item.price.toLocaleString()}
                             </p>
                           </div>
                           <div className="flex items-center mb-3 md:mb-0">
@@ -74,7 +74,7 @@ const Cart: React.FC = () => {
                         </div>
                         <div className="flex justify-between items-center">
                           <p className="text-neutral-700">
-                            Subtotal: ${(item.price * item.quantity).toFixed(2)}
+                            Subtotal: Rs. {(item.price * item.quantity).toLocaleString()}
                           </p>
                           <button
                             onClick={() => removeFromCart(item._id)}
@@ -99,22 +99,22 @@ const Cart: React.FC = () => {
               <div className="mb-4 pb-4 border-b border-neutral-200">
                 <div className="flex justify-between mb-2">
                   <span className="text-neutral-700">Subtotal ({totalItems} items)</span>
-                  <span className="font-medium">${totalPrice.toFixed(2)}</span>
+                  <span className="font-medium">Rs. {totalPrice.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between mb-2">
                   <span className="text-neutral-700">Shipping</span>
-                  <span className="font-medium">$5.00</span>
+                  <span className="font-medium">Rs. 500</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-neutral-700">Tax</span>
-                  <span className="font-medium">${(totalPrice * 0.07).toFixed(2)}</span>
+                  <span className="font-medium">Rs. {(totalPrice * 0.07).toLocaleString()}</span>
                 </div>
               </div>
               
               <div className="flex justify-between mb-6">
                 <span className="text-lg font-bold">Total</span>
                 <span className="text-lg font-bold">
-                  ${(totalPrice + 5 + totalPrice * 0.07).toFixed(2)}
+                  Rs. {(totalPrice + 500 + totalPrice * 0.07).toLocaleString()}
                 </span>
               </div>
               

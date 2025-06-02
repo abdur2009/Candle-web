@@ -1,74 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, X, Check } from 'lucide-react';
 import { toast } from 'react-toastify';
-
-// Mock data for products (will be replaced with API data)
-const MOCK_PRODUCTS = [
-  {
-    _id: '1',
-    name: 'Lavender Dreams',
-    price: 24.99,
-    category: 'Relaxation',
-    stock: 15,
-    image: 'https://images.pexels.com/photos/4498184/pexels-photo-4498184.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-  },
-  {
-    _id: '2',
-    name: 'Vanilla Bliss',
-    price: 19.99,
-    category: 'Cozy',
-    stock: 20,
-    image: 'https://images.pexels.com/photos/3270223/pexels-photo-3270223.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-  },
-  {
-    _id: '3',
-    name: 'Ocean Breeze',
-    price: 22.99,
-    category: 'Fresh',
-    stock: 18,
-    image: 'https://images.pexels.com/photos/7783699/pexels-photo-7783699.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-  },
-  {
-    _id: '4',
-    name: 'Cinnamon Spice',
-    price: 21.99,
-    category: 'Seasonal',
-    stock: 10,
-    image: 'https://images.pexels.com/photos/11793440/pexels-photo-11793440.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-  },
-  {
-    _id: '5',
-    name: 'Rose Garden',
-    price: 26.99,
-    category: 'Floral',
-    stock: 12,
-    image: 'https://images.pexels.com/photos/9987224/pexels-photo-9987224.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-  },
-  {
-    _id: '6',
-    name: 'Eucalyptus Mint',
-    price: 23.99,
-    category: 'Refreshing',
-    stock: 5,
-    image: 'https://images.pexels.com/photos/6869653/pexels-photo-6869653.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-  },
-  {
-    _id: '7',
-    name: 'Amber & Sandalwood',
-    price: 28.99,
-    category: 'Woody',
-    stock: 8,
-    image: 'https://images.pexels.com/photos/4207799/pexels-photo-4207799.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-  },
-  {
-    _id: '8',
-    name: 'Citrus Sunshine',
-    price: 20.99,
-    category: 'Energizing',
-    stock: 14,
-    image: 'https://images.pexels.com/photos/6443303/pexels-photo-6443303.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-  }
-];
+import axios from 'axios';
 
 interface Product {
   _id: string;
@@ -81,7 +14,7 @@ interface Product {
 }
 
 const AdminProducts: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -101,29 +34,26 @@ const AdminProducts: React.FC = () => {
   
   // Fetch products from API
   useEffect(() => {
-    // In a real implementation, you would fetch from the backend
-    /* 
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:5000/api/products');
+        const token = localStorage.getItem('token');
+        const response = await axios.get('http://localhost:5000/api/products', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
         setProducts(response.data);
         setFilteredProducts(response.data);
       } catch (error) {
         console.error('Error fetching products:', error);
+        toast.error('Failed to fetch products');
       } finally {
         setLoading(false);
       }
     };
 
     fetchProducts();
-    */
-    
-    // Simulate API call
-    setTimeout(() => {
-      setFilteredProducts(products);
-      setLoading(false);
-    }, 500);
   }, []);
   
   // Filter products based on search term
@@ -202,7 +132,7 @@ const AdminProducts: React.FC = () => {
     setCurrentProduct(null);
   };
   
-  const handleAddProduct = (e: React.FormEvent) => {
+  const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate form
@@ -212,8 +142,7 @@ const AdminProducts: React.FC = () => {
     }
     
     // Create new product
-    const newProduct: Product = {
-      _id: Date.now().toString(), // In a real app, this would be handled by the backend
+    const newProduct = {
       name: formData.name,
       price: parseFloat(formData.price),
       category: formData.category,
@@ -222,11 +151,13 @@ const AdminProducts: React.FC = () => {
       description: formData.description
     };
     
-    // In a real implementation, you would send data to your backend
-    /* 
-    const addProduct = async () => {
-      try {
-        const response = await axios.post('http://localhost:5000/api/products', newProduct);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post('http://localhost:5000/api/products', newProduct, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
         setProducts([...products, response.data]);
         toast.success('Product added successfully!');
         closeAddModal();
@@ -236,16 +167,7 @@ const AdminProducts: React.FC = () => {
       }
     };
 
-    addProduct();
-    */
-    
-    // For demo purposes, we'll just update the local state
-    setProducts([...products, newProduct]);
-    toast.success('Product added successfully!');
-    closeAddModal();
-  };
-  
-  const handleUpdateProduct = (e: React.FormEvent) => {
+  const handleUpdateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!currentProduct) return;
@@ -257,8 +179,7 @@ const AdminProducts: React.FC = () => {
     }
     
     // Update product
-    const updatedProduct: Product = {
-      ...currentProduct,
+    const updatedProduct = {
       name: formData.name,
       price: parseFloat(formData.price),
       category: formData.category,
@@ -267,11 +188,13 @@ const AdminProducts: React.FC = () => {
       description: formData.description
     };
     
-    // In a real implementation, you would send data to your backend
-    /* 
-    const updateProduct = async () => {
-      try {
-        const response = await axios.put(`http://localhost:5000/api/products/${currentProduct._id}`, updatedProduct);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.put(`http://localhost:5000/api/products/${currentProduct._id}`, updatedProduct, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
         setProducts(products.map(p => p._id === currentProduct._id ? response.data : p));
         toast.success('Product updated successfully!');
         closeEditModal();
@@ -281,23 +204,16 @@ const AdminProducts: React.FC = () => {
       }
     };
 
-    updateProduct();
-    */
-    
-    // For demo purposes, we'll just update the local state
-    setProducts(products.map(p => p._id === currentProduct._id ? updatedProduct : p));
-    toast.success('Product updated successfully!');
-    closeEditModal();
-  };
-  
-  const handleDeleteProduct = () => {
+  const handleDeleteProduct = async () => {
     if (!currentProduct) return;
     
-    // In a real implementation, you would send request to your backend
-    /* 
-    const deleteProduct = async () => {
-      try {
-        await axios.delete(`http://localhost:5000/api/products/${currentProduct._id}`);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`http://localhost:5000/api/products/${currentProduct._id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
         setProducts(products.filter(p => p._id !== currentProduct._id));
         toast.success('Product deleted successfully!');
         closeDeleteModal();
@@ -305,15 +221,6 @@ const AdminProducts: React.FC = () => {
         console.error('Error deleting product:', error);
         toast.error('Failed to delete product');
       }
-    };
-
-    deleteProduct();
-    */
-    
-    // For demo purposes, we'll just update the local state
-    setProducts(products.filter(p => p._id !== currentProduct._id));
-    toast.success('Product deleted successfully!');
-    closeDeleteModal();
   };
 
   if (loading) {
@@ -403,7 +310,7 @@ const AdminProducts: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                      ${product.price.toFixed(2)}
+                      Rs. {product.price.toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-block px-2 py-1 text-xs rounded-full ${
@@ -478,7 +385,7 @@ const AdminProducts: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                       <label htmlFor="price" className="block text-sm font-medium text-neutral-700 mb-1">
-                        Price ($)
+                        Price (Rs.)
                       </label>
                       <input
                         type="number"
@@ -619,7 +526,7 @@ const AdminProducts: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                       <label htmlFor="edit-price" className="block text-sm font-medium text-neutral-700 mb-1">
-                        Price ($)
+                        Price (Rs.)
                       </label>
                       <input
                         type="number"

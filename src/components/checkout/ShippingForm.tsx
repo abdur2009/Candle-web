@@ -129,21 +129,14 @@ const ShippingForm: React.FC<ShippingFormProps> = ({ formData, onChange }) => {
           <label htmlFor="country" className="block text-sm font-medium text-neutral-700 mb-1">
             Country
           </label>
-          <select
+          <input
+            type="text"
             id="country"
             name="country"
-            value={formData.country}
-            onChange={onChange}
-            className="input"
-            required
-          >
-            <option value="">Select Country</option>
-            <option value="Pakistan">Pakistan</option>
-            <option value="United States">United States</option>
-            <option value="United Kingdom">United Kingdom</option>
-            <option value="Canada">Canada</option>
-            <option value="Australia">Australia</option>
-          </select>
+            value="Pakistan"
+            className="input bg-neutral-50"
+            disabled
+          />
         </div>
       </div>
     </div>

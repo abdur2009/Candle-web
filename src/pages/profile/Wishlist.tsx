@@ -1,76 +1,74 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingBag, Trash2 } from 'lucide-react';
+import { ShoppingBag, Trash2, Heart } from 'lucide-react';
+import axios from 'axios';
 import { CartContext } from '../../contexts/CartContext';
+import { toast } from 'react-hot-toast';
 
-// Mock data for wishlist (will be replaced with API data)
-const MOCK_WISHLIST = [
-  {
-    _id: '1',
-    name: 'Lavender Dreams',
-    price: 24.99,
-    image: 'https://images.pexels.com/photos/4498184/pexels-photo-4498184.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    inStock: true
-  },
-  {
-    _id: '5',
-    name: 'Rose Garden',
-    price: 26.99,
-    image: 'https://images.pexels.com/photos/9987224/pexels-photo-9987224.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    inStock: true
-  },
-  {
-    _id: '7',
-    name: 'Amber & Sandalwood',
-    price: 28.99,
-    image: 'https://images.pexels.com/photos/4207799/pexels-photo-4207799.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    inStock: false
-  }
-];
+interface Product {
+  _id: string;
+  name: string;
+  price: number;
+  image: string;
+  category: string;
+  stock: number;
+  description?: string;
+}
 
 const Wishlist: React.FC = () => {
-  const [wishlist, setWishlist] = useState(MOCK_WISHLIST);
-  const [loading, setLoading] = useState(true);
   const { addToCart } = useContext(CartContext);
-  
-  // Fetch wishlist from API
+  const [wishlist, setWishlist] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    // In a real implementation, you would fetch from the backend
-    /* 
     const fetchWishlist = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:5000/api/wishlist');
+        const token = localStorage.getItem('token');
+        const response = await axios.get('http://localhost:5000/api/wishlist', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
         setWishlist(response.data);
       } catch (error) {
         console.error('Error fetching wishlist:', error);
+        toast.error('Failed to fetch wishlist');
       } finally {
         setLoading(false);
       }
     };
 
     fetchWishlist();
-    */
-    
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-    }, 500);
   }, []);
-  
-  const handleRemoveFromWishlist = (productId: string) => {
-    // In a real implementation, you would also update the backend
-    setWishlist(wishlist.filter(item => item._id !== productId));
+
+  const handleAddToCart = (product: Product) => {
+    if (product.stock > 0) {
+      addToCart({
+        _id: product._id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        quantity: 1,
+      });
+      toast.success('Added to cart');
+    }
   };
-  
-  const handleAddToCart = (product: any) => {
-    addToCart({
-      _id: product._id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      quantity: 1,
-    });
+
+  const handleRemoveFromWishlist = async (productId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`http://localhost:5000/api/wishlist/${productId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setWishlist(wishlist.filter(item => item._id !== productId));
+      toast.success('Removed from wishlist');
+    } catch (error) {
+      console.error('Error removing from wishlist:', error);
+      toast.error('Failed to remove from wishlist');
+    }
   };
 
   if (loading) {
@@ -89,7 +87,7 @@ const Wishlist: React.FC = () => {
         </div>
         <h3 className="text-xl font-medium mb-2">Your Wishlist is Empty</h3>
         <p className="text-neutral-600 mb-6">
-          Start adding your favorite candles to your wishlist.
+          Browse our products and add your favorites to your wishlist.
         </p>
         <Link to="/" className="btn btn-primary">
           Browse Products
@@ -111,7 +109,7 @@ const Wishlist: React.FC = () => {
                 alt={product.name}
                 className="w-full h-48 object-cover"
               />
-              {!product.inStock && (
+              {product.stock <= 0 && (
                 <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                   <span className="bg-red-600 text-white text-sm px-3 py-1 rounded-full">
                     Out of Stock
@@ -132,10 +130,10 @@ const Wishlist: React.FC = () => {
                 <button
                   onClick={() => handleAddToCart(product)}
                   className="btn btn-primary flex-grow flex items-center justify-center"
-                  disabled={!product.inStock}
+                  disabled={product.stock <= 0}
                 >
                   <ShoppingBag className="h-4 w-4 mr-2" />
-                  Add to Cart
+                  {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
                 </button>
                 
                 <button

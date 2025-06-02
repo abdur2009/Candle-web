@@ -35,20 +35,20 @@ const FeaturedSlider: React.FC<FeaturedSliderProps> = ({ products }) => {
   };
 
   return (
-    <div className="mb-12">
+    <div className="mb-12 w-full">
       <Slider {...settings}>
         {products.map((product) => (
-          <div key={product._id} className="outline-none">
-            <div className="relative h-[500px] bg-gradient-to-r from-neutral-900 to-neutral-800">
-              <div className="absolute inset-0 opacity-60">
+          <div key={product._id} className="outline-none w-full">
+            <div className="relative h-[500px] bg-gradient-to-r from-neutral-900 to-neutral-800 w-full">
+              <div className="absolute inset-0 opacity-60 w-full">
                 <img
                   src={product.image}
                   alt={product.name}
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="container-custom mx-auto relative h-full flex items-center">
-                <div className="max-w-lg text-white p-6 md:p-0">
+              <div className="container-custom relative h-full flex items-center">
+                <div className="max-w-lg text-white px-4">
                   <h2 className="text-4xl font-serif font-bold mb-4">{product.name}</h2>
                   <p className="mb-6 text-lg">{product.description}</p>
                   <Link
